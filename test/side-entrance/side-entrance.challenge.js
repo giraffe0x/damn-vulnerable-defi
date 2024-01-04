@@ -2,7 +2,7 @@ const { ethers } = require('hardhat');
 const { expect } = require('chai');
 const { setBalance } = require('@nomicfoundation/hardhat-network-helpers');
 
-describe.only('[Challenge] Side entrance', function () {
+describe('[Challenge] Side entrance', function () {
     let deployer, player;
     let pool;
 

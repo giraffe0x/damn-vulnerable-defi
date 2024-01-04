@@ -7,6 +7,8 @@ import { SafeTransferLib, ERC4626, ERC20 } from "solmate/src/mixins/ERC4626.sol"
 import "solmate/src/auth/Owned.sol";
 import { IERC3156FlashBorrower, IERC3156FlashLender } from "@openzeppelin/contracts/interfaces/IERC3156.sol";
 
+import "hardhat/console.sol";
+
 /**
  * @title UnstoppableVault
  * @author Damn Vulnerable DeFi (https://damnvulnerabledefi.xyz)
@@ -53,7 +55,8 @@ contract UnstoppableVault is IERC3156FlashLender, ReentrancyGuard, Owned, ERC462
     function flashFee(address _token, uint256 _amount) public view returns (uint256 fee) {
         if (address(asset) != _token)
             revert UnsupportedCurrency();
-
+        //@audit if flash loan is less than max, no fee
+        //@audit what are the implications of no fee?
         if (block.timestamp < end && _amount < maxFlashLoan(_token)) {
             return 0;
         } else {
@@ -93,6 +96,9 @@ contract UnstoppableVault is IERC3156FlashLender, ReentrancyGuard, Owned, ERC462
         if (amount == 0) revert InvalidAmount(0); // fail early
         if (address(asset) != _token) revert UnsupportedCurrency(); // enforce ERC3156 requirement
         uint256 balanceBefore = totalAssets();
+        console.log("balanceBefore: %s", balanceBefore);
+        console.log("totalSupply: %s", totalSupply);
+        console.log("converToShares", convertToShares(totalSupply));
         if (convertToShares(totalSupply) != balanceBefore) revert InvalidBalance(); // enforce ERC4626 requirement
         uint256 fee = flashFee(_token, amount);
         // transfer tokens out + execute callback on receiver

