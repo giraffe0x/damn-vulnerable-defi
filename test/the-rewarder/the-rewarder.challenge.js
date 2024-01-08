@@ -1,7 +1,7 @@
 const { ethers } = require('hardhat');
 const { expect } = require('chai');
 
-describe.only('[Challenge] The rewarder', function () {
+describe('[Challenge] The rewarder', function () {
     const TOKENS_IN_LENDER_POOL = 1000000n * 10n ** 18n; // 1 million tokens
     let users, deployer, alice, bob, charlie, david, player;
     let liquidityToken, flashLoanPool, rewarderPool, rewardToken, accountingToken;
