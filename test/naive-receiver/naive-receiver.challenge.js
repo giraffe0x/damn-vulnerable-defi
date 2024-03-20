@@ -1,7 +1,7 @@
 const { ethers } = require('hardhat');
 const { expect } = require('chai');
 
-describe.only('[Challenge] Naive receiver', function () {
+describe('[Challenge] Naive receiver', function () {
     let deployer, user, player;
     let pool, receiver;
 

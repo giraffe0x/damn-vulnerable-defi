@@ -92,6 +92,7 @@ contract ClimberTimelock is ClimberTimelockBase {
             }
         }
 
+        //@audit CEI pattern fail here
         if (getOperationState(id) != OperationState.ReadyForExecution) {
             revert NotReadyForExecution(id);
         }
@@ -99,6 +100,7 @@ contract ClimberTimelock is ClimberTimelockBase {
         operations[id].executed = true;
     }
 
+    //@audit use this in low level call to allow immediate execution
     function updateDelay(uint64 newDelay) external {
         if (msg.sender != address(this)) {
             revert CallerNotTimelock();

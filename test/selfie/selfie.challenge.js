@@ -2,7 +2,7 @@ const { ethers } = require('hardhat');
 const { expect } = require('chai');
 const { time } = require("@nomicfoundation/hardhat-network-helpers");
 
-describe.only('[Challenge] Selfie', function () {
+describe('[Challenge] Selfie', function () {
     let deployer, player;
     let token, governance, pool;
 
