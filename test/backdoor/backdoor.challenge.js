@@ -1,7 +1,7 @@
 const { ethers } = require('hardhat');
 const { expect } = require('chai');
 
-describe('[Challenge] Backdoor', function () {
+describe.only('[Challenge] Backdoor', function () {
     let deployer, users, player;
     let masterCopy, walletFactory, token, walletRegistry;
 
@@ -16,7 +16,7 @@ describe('[Challenge] Backdoor', function () {
         masterCopy = await (await ethers.getContractFactory('GnosisSafe', deployer)).deploy();
         walletFactory = await (await ethers.getContractFactory('GnosisSafeProxyFactory', deployer)).deploy();
         token = await (await ethers.getContractFactory('DamnValuableToken', deployer)).deploy();
-        
+
         // Deploy the registry
         walletRegistry = await (await ethers.getContractFactory('WalletRegistry', deployer)).deploy(
             masterCopy.address,
@@ -46,6 +46,15 @@ describe('[Challenge] Backdoor', function () {
 
     it('Execution', async function () {
         /** CODE YOUR SOLUTION HERE */
+        const BackdoorAttacker = await ethers.getContractFactory('BackdoorAttacker', player)
+
+        await BackdoorAttacker.deploy(
+          masterCopy.address,
+          walletFactory.address,
+          walletRegistry.address,
+          [alice.address, bob.address, charlie.address, david.address],
+          token.address
+        );
     });
 
     after(async function () {
@@ -56,7 +65,7 @@ describe('[Challenge] Backdoor', function () {
 
         for (let i = 0; i < users.length; i++) {
             let wallet = await walletRegistry.wallets(users[i]);
-            
+
             // User must have registered a wallet
             expect(wallet).to.not.eq(
                 ethers.constants.AddressZero,

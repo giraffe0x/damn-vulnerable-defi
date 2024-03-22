@@ -105,11 +105,13 @@ contract WalletRegistry is IProxyCreationCallback, Ownable {
         unchecked {
             walletOwner = owners[0];
         }
+        //@audit assumes owner == safe creator
         if (!beneficiaries[walletOwner]) {
             revert OwnerIsNotABeneficiary();
         }
 
         address fallbackManager = _getFallbackManager(walletAddress);
+        //@audit why should fallback manager be address 0?
         if (fallbackManager != address(0))
             revert InvalidFallbackManager(fallbackManager);
 
